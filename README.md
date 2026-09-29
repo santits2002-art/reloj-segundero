@@ -19,3 +19,7 @@ Si el Arduino se reinicia al mover el servo, alimenta el servo con 5 V externos 
 1. Abre `reloj-segundero.ino` en el IDE de Arduino.
 2. Elige la placa y el puerto.
 3. Sube el programa. Al arrancar, la aguja empieza en el segundo 0.
+
+## Otros sketches
+
+DHT11 de temperatura y humedad en un NodeMCU 0.9, listo para Arduino IoT Cloud: [`dht11-nodemcu`](dht11-nodemcu/README.md).

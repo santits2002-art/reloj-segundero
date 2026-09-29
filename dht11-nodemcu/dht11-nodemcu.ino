@@ -10,8 +10,12 @@
     DATA -> D2 (GPIO4)
 
   En la Thing crea estas variables, con el mismo nombre:
-    temperature   tipo Temperature          permiso Read   cada 10 s
-    humidity      tipo Relative Humidity    permiso Read   cada 10 s
+    temperature   tipo Temperature          permiso Read        cada 10 s
+    humidity      tipo Relative Humidity    permiso Read        cada 10 s
+    control       tipo Boolean              permiso Read/Write  al cambiar
+
+  El LED de la placa (GPIO2, activo a nivel bajo) se enciende solo si
+  control esta activado en el dashboard y la temperatura supera 23 C.
 
   Librerias (Library Manager del editor en la nube):
     DHT sensor library, de Adafruit
@@ -35,12 +39,23 @@ const uint8_t DHT_TIPO = DHT11;
 // El DHT11 solo admite una lectura valida cada 2 segundos.
 const unsigned long INTERVALO_LECTURA_MS = 2000UL;
 
+// El LED azul del NodeMCU 0.9 esta en GPIO2 y enciende con LOW.
+const float UMBRAL_LED_C = 23.0f;
+
 DHT dht(PIN_DHT, DHT_TIPO);
 unsigned long ultimaLecturaMs = 0;
+
+void actualizarLed() {
+  bool encender = control && ((float)temperature > UMBRAL_LED_C);
+  digitalWrite(LED_BUILTIN, encender ? LOW : HIGH);
+}
 
 void setup() {
   Serial.begin(9600);
   delay(1500);
+
+  pinMode(LED_BUILTIN, OUTPUT);
+  digitalWrite(LED_BUILTIN, HIGH);
 
   initProperties();
   ArduinoCloud.begin(ArduinoIoTPreferredConnection);
@@ -75,10 +90,20 @@ void loop() {
 
   temperature = temperatura;
   humidity = humedad;
+  actualizarLed();
 
   Serial.print("Temperatura: ");
   Serial.print(temperatura);
   Serial.print(" C | Humedad: ");
   Serial.print(humedad);
-  Serial.println(" %");
+  Serial.print(" % | Control: ");
+  Serial.print(control ? "activado" : "apagado");
+  Serial.print(" | LED: ");
+  Serial.println((float)temperature > UMBRAL_LED_C && control ? "encendido" : "apagado");
+}
+
+void onControlChange() {
+  actualizarLed();
+  Serial.print("Control desde el dashboard: ");
+  Serial.println(control ? "activado" : "apagado");
 }

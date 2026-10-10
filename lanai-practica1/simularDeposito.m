@@ -116,12 +116,15 @@ function [t, h, qSalida, qBomba, qEntrada] = simularDeposito(deposito, tFinal, q
     fprintf('Error maximo |Euler - solucion exacta del lineal| = %.3e m\n', errorMaximo);
 
     if usarSenalPropia
-        fprintf('Escalones de bomba: 1.2*q0, 0.8*q0 y q0. Cada uno dura %.2f s.\n', nTramo * Ts);
+        fprintf('Escalones de bomba: 1.2*q0, 0.8*q0 y q0. Cambio cada %.2f s.\n', nTramo * Ts);
         fprintf('Equilibrios del modelo lineal: h = %.4f m, %.4f m y %.4f m.\n', ...
             h0 + K * 0.2 * q0, h0 - K * 0.2 * q0, h0);
-        indices = [nTramo, 2 * nTramo, nPasos];
-        indices = indices(indices >= 1 & indices <= nPasos);
+        % Solo se informa un tramo si la simulacion ha llegado a completarlo.
+        indices = [nTramo, 2 * nTramo, min(nPasos, 3 * nTramo)];
         for i = 1:numel(indices)
+            if nPasos < indices(i)
+                break
+            end
             idx = indices(i) + 1;
             fprintf('  Fin de tramo en t = %7.2f s:  h = %.4f m,  qSalida = %.6f m^3/s\n', ...
                 t(idx), h(idx), qSalida(idx));

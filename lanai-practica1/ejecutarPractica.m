@@ -15,20 +15,29 @@
 % Cada escalon dura 4*tau, por encima de los 3*tau que el enunciado da
 % como tiempo practico de establecimiento.
 %
-% Otro deposito de ejemplo (hay que sustituir la linea del constructor):
-%   deposito = Deposito('NivelNominal', 0.8, 'Retardo', 5, 'Ts', 0.05);
+% Ts es el mismo numero que recibe el constructor. La clase lo guarda
+% en privado, asi que la simulacion no puede leerlo: hay que pasarlo.
+% Con Deposito() sin argumentos, el paso por defecto es 0.1 s.
+% Si cambias el paso, usalo en los dos sitios:
+%   Ts = 0.05;
+%   deposito = Deposito('Ts', Ts, 'NivelNominal', 0.8, 'Retardo', 5);
 %   deposito = Deposito('AlturaInicial', 0.35);
 
 estaCarpeta = fileparts(mfilename('fullpath'));
 addpath(estaCarpeta);
 
+Ts = 0.1;
 deposito = Deposito();
 
-fprintf('tau = %.3f s\n', deposito.obtenerConstanteTiempo());
-fprintf('K   = %.3f s/m^2\n', deposito.obtenerGanancia());
-fprintf('q0  = %.6f m^3/s\n', deposito.obtenerCaudalNominal());
-fprintf('L   = %.3f s\n', deposito.obtenerRetardo());
-fprintf('h0  = %.3f m\n', deposito.obtenerNivelNominal());
-fprintf('Ts  = %.3f s\n', deposito.obtenerPaso());
+q0 = deposito.obtenerCaudalNominal();
+K = deposito.obtenerGanancia();
+h0 = K * q0 / 2;
 
-simularDeposito(deposito);
+fprintf('tau = %.3f s\n', deposito.obtenerConstanteTiempo());
+fprintf('K   = %.3f s/m^2\n', K);
+fprintf('q0  = %.6f m^3/s\n', q0);
+fprintf('L   = %.3f s\n', deposito.obtenerRetardo());
+fprintf('h0  = %.3f m\n', h0);
+fprintf('Ts  = %.3f s\n', Ts);
+
+simularDeposito(deposito, Ts);

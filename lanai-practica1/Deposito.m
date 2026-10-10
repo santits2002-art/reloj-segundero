@@ -1,9 +1,9 @@
 classdef Deposito < handle
     % Deposito con salida por gravedad y retardo en el caudal de entrada.
     % Modelo linealizado alrededor de h0.
-    % Resolucion de la ED mediante aproximacion de Euler.
+    % Resolución de la ED mediante aproximación de Euler.
     % Construccion: Deposito() o Deposito('Nombre', valor, ...).
-    %   Nombres de los parametros (entre comillas simples -array de caracteres- o dobles -string-):
+    %   Nombres de los parámetros (entre comillas simples -array de caracteres- o dobles -string-):
     %       AreaDeposito
     %       AreaSalida
     %       CoefDescarga
@@ -11,13 +11,9 @@ classdef Deposito < handle
     %       Retardo
     %       Ts
     %       AlturaInicial
-    %   En el caso de que no se especifiquen valores, se inicializaran con valores por defecto.
+    %   En el caso de que no se especifiquen valores, se inicializarán con valores por defecto.
     %   Ejemplo: mi_deposito = Deposito('AreaDeposito', 7, 'CoefDescarga', 0.3);
     %
-    % Metodos de consulta anadidos para poder simular desde fuera de la clase:
-    %   obtenerPaso          -> Ts [s]
-    %   obtenerNivelNominal  -> h0 [m]
-    % Ts y h0 siguen siendo privados; estos metodos solo los leen.
 
     properties (Access = private)
         AreaDeposito         % Seccion horizontal del deposito [m^2]
@@ -39,16 +35,16 @@ classdef Deposito < handle
         function obj = Deposito(varargin)
             % Se crea el deposito con valores predeterminados.
             A = pi*(1/2)^2;     % Area de un deposito de diametro = 1 m
-            a = pi*(0.1/2)^2;   % Area de un orificio de salida de diametro = 10 cm
+            a = pi*(0.1/2)^2;   % Área de un orificio de salida de diametro = 10 cm
             Cd = 0.6;           % Coeficiente de descarga
             h0 = 0.5;           % Nivel nominal
             L = 2;              % Retardo de transporte
             Ts = 0.1;           % Paso de integracion
-            hInicial = [];      % Sin especificar. Se tomara el nivel nominal
+            hInicial = [];      % Sin especificar. Se tomará el nivel nominal
 
             % Se verifica que, a cada nombre le siga un valor.
             % Si todo es correcto, se inicializan las variables
-            if mod(nargin, 2) ~= 0 % Primero: numero de parametros impar
+            if mod(nargin, 2) ~= 0 %Primero: número de parámetros impar
                 error('Los parametros deben indicarse en parejas nombre-valor.');
             end
             for i = 1:2:nargin % Segundo: se recorren las parejas. Tiene que haber un nombre en i y un valor en i+1.
@@ -105,11 +101,11 @@ classdef Deposito < handle
             obj.Retardo = obj.NumeroPasosRetardo * Ts;
 
             % Caudal de equilibrio y parametros del modelo linealizado.
-            g = 9.81; % Gravedad [m/s^2]
+            g = 9.81; % Gravedad [m/s^2]                                %Formulas del pdf
             coefSalida = obj.CoefDescarga * obj.AreaSalida * sqrt(2*g); % qSalida = coefSalida*sqrt(h)
-            obj.CaudalNominal = coefSalida * sqrt(obj.NivelNominal);    % q0 = cs*sqrt(h0)
-            obj.Resistencia = 2 * sqrt(obj.NivelNominal) / coefSalida;  % R = [2*sqrt(h0)]/cs
-            obj.Tau = obj.AreaDeposito * obj.Resistencia;               % tau = A*R
+            obj.CaudalNominal = coefSalida * sqrt(obj.NivelNominal);    % q0=cs*sqrt(h0)
+            obj.Resistencia = 2 * sqrt(obj.NivelNominal) / coefSalida;  % R=[2*sqrt(h0)]/cs
+            obj.Tau = obj.AreaDeposito * obj.Resistencia;               % tau=A*R
 
             if Ts >= 2 * obj.Tau % Se comprueba la estabilidad numerica de Euler.
                 error('El paso de integracion Ts debe ser menor que 2*Tau.');
@@ -117,12 +113,12 @@ classdef Deposito < handle
                 warning('Se recomienda utilizar Ts <= Tau/10.');
             end
 
-            obj.reiniciar(hInicial); % Inicializacion del estado en t = 0
+            obj.reiniciar(hInicial); %Función de inicialización cuando t=0
         end
-
+%------------------------------------------------------------------------------------------------------
         function h = obtenerNivel(obj)
             % Devuelve el nivel actual del deposito [m].
-            h = obj.Nivel;
+            h = obj.Nivel;                                              %Esto es h(k)
         end
 
         function q0 = obtenerCaudalNominal(obj)
@@ -132,7 +128,7 @@ classdef Deposito < handle
 
         function q = obtenerCaudalSalida(obj)
             % Devuelve el caudal de salida del modelo [m^3/s].
-            q = obj.CaudalSalida;
+            q = obj.CaudalSalida;                                       %qsalida(t)
         end
 
         function L = obtenerRetardo(obj)
@@ -149,18 +145,8 @@ classdef Deposito < handle
             % Devuelve la ganancia estatica del modelo linealizado [s/m^2].
             K = obj.Resistencia;
         end
-
-        function Ts = obtenerPaso(obj)
-            % Devuelve el paso de integracion [s].
-            Ts = obj.Ts;
-        end
-
-        function h0 = obtenerNivelNominal(obj)
-            % Devuelve el nivel nominal de linealizacion [m].
-            h0 = obj.NivelNominal;
-        end
-
-        function [h, qEntrada] = actualizar(obj, qBomba)
+%------------------------------------------------------------------------------------------------------
+        function [h, qEntrada] = actualizar(obj, qBomba) %Resuelve ecuacion diferencia
             % Avanzar un paso Ts, manteniendo constante el caudal de la bomba.
             % qBomba: caudal suministrado por la bomba en este paso [m^3/s].
             % qEntrada: caudal que llega al deposito tras el retardo [m^3/s].
@@ -168,7 +154,7 @@ classdef Deposito < handle
             if nargin < 2
                 error('Debe indicarse el caudal de la bomba.');
             end
-            if ~isnumeric(qBomba) || ~isscalar(qBomba) || ~isreal(qBomba) || ~isfinite(qBomba) || qBomba < 0
+            if ~isnumeric(qBomba)|| ~isscalar(qBomba) || ~isreal(qBomba) || ~isfinite(qBomba) || qBomba < 0
                 error('El caudal debe ser un numero real, finito y no negativo.');
             end
 
@@ -183,14 +169,14 @@ classdef Deposito < handle
 
             % Balance de caudales: dh/dt = (qEntrada - qSalida)/A.
             derivadaNivel = (qEntrada - obj.CaudalSalida)/obj.AreaDeposito;
-            % Actualizacion del nivel mediante Euler hacia delante.
+            % Actualización del nivel mediante Euler hacia delante.
             obj.Nivel = obj.Nivel + obj.Ts * derivadaNivel;
 
             % Calcular la salida correspondiente al nuevo nivel.
             obj.CaudalSalida = obj.CaudalNominal + (obj.Nivel - obj.NivelNominal)/obj.Resistencia;
             h = obj.Nivel;
         end
-
+%------------------------------------------------------------------------------------------------------
         function reiniciar(obj, hInicial)
             % Se reinicia el nivel [m] y el historial. Sin argumento, se usa h0.
             if nargin < 2
@@ -203,7 +189,8 @@ classdef Deposito < handle
             obj.Nivel = hInicial;
             % Caudal de salida al nivel inicial; es q0 si hInicial = h0.
             obj.CaudalSalida = obj.CaudalNominal + (obj.Nivel - obj.NivelNominal)/obj.Resistencia;
-            % Suponer que la bomba suministraba q0 antes de iniciar la simulacion.
+            % Suponer que la bomba suministraba q0 antes de iniciar la simulacion. Es necesario ya
+            % que se usa en el método actualizar
             obj.CaudalesAnteriores = obj.CaudalNominal * ones(1, obj.NumeroPasosRetardo);
         end
     end

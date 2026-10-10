@@ -1,11 +1,14 @@
-function [t, h, qSalida, qBomba, qEntrada] = simularDeposito(deposito, tFinal, qBombaUsuario)
+function [t, h, qSalida, qBomba, qEntrada] = simularDeposito(deposito, Ts, tFinal, qBombaUsuario)
 %SIMULARDEPOSITO Simula el nivel desde t = 0 hasta t = tFinal.
 %
-%   [t, h, qSalida, qBomba, qEntrada] = simularDeposito(deposito)
-%   [t, h, qSalida, qBomba, qEntrada] = simularDeposito(deposito, tFinal)
-%   [t, h, qSalida, qBomba, qEntrada] = simularDeposito(deposito, tFinal, qBomba)
+%   [t, h, qSalida, qBomba, qEntrada] = simularDeposito(deposito, Ts)
+%   [t, h, qSalida, qBomba, qEntrada] = simularDeposito(deposito, Ts, tFinal)
+%   [t, h, qSalida, qBomba, qEntrada] = simularDeposito(deposito, Ts, tFinal, qBomba)
 %
-%   deposito: objeto de la clase Deposito.
+%   deposito: objeto de la clase Deposito, sin modificar.
+%   Ts: paso de integracion [s]. Tiene que ser el mismo con el que se
+%       construyo el objeto. La clase lo guarda en privado y no lo devuelve.
+%       Con Deposito() a secas, Ts vale 0.1 s.
 %   tFinal: instante final [s]. Si se omite, se simulan tres tramos de
 %           4*tau para ver el regimen permanente de cada escalon.
 %   qBomba: caudal de la bomba en cada paso [m^3/s]. Si se omite, la
@@ -15,6 +18,8 @@ function [t, h, qSalida, qBomba, qEntrada] = simularDeposito(deposito, tFinal, q
 %           de primer orden no se da por estabilizado hasta ts ≈ 3*tau
 %           (entonces ha recorrido el 95 % del cambio). El cuarto tau deja
 %           un tramo ya practicamente plano antes del cambio siguiente.
+%
+%   h0 no se lee de la clase. Sale de K y q0, porque R*q0 = 2*h0.
 %
 %   Salidas (vectores columna, un valor por instante t = 0, Ts, 2*Ts, ...):
 %       h         nivel [m]
@@ -27,18 +32,31 @@ function [t, h, qSalida, qBomba, qEntrada] = simularDeposito(deposito, tFinal, q
     if nargin < 1 || ~isa(deposito, 'Deposito')
         error('El primer argumento debe ser un objeto Deposito.');
     end
+    if nargin < 2
+        error(['Hay que indicar Ts, el mismo paso con el que se creo el deposito. ', ...
+               'Con el constructor por defecto, Ts = 0.1 s.']);
+    end
+    if ~isnumeric(Ts) || ~isscalar(Ts) || ~isreal(Ts) || ~isfinite(Ts) || Ts <= 0
+        error('Ts debe ser un escalar real, finito y positivo.');
+    end
 
-    Ts = deposito.obtenerPaso();
     tau = deposito.obtenerConstanteTiempo();
     q0 = deposito.obtenerCaudalNominal();
     L = deposito.obtenerRetardo();
-    h0 = deposito.obtenerNivelNominal();
     K = deposito.obtenerGanancia();
+    % R = 2*sqrt(h0)/cs y q0 = cs*sqrt(h0), luego R*q0 = 2*h0.
+    h0 = K * q0 / 2;
+
+    if L > 0 && abs(L / Ts - round(L / Ts)) > 1e-6
+        warning('simularDeposito:Ts', ...
+            ['El retardo del deposito (%.6g s) no es un multiplo de Ts = %.6g s. ', ...
+             'Ts tiene que ser el mismo valor usado al crear el objeto.'], L, Ts);
+    end
 
     % Cada escalon se mantiene 4 constantes de tiempo.
     nTramo = max(1, round(4 * tau / Ts));
 
-    if nargin < 2 || isempty(tFinal)
+    if nargin < 3 || isempty(tFinal)
         nPasos = 3 * nTramo;
     else
         if ~isnumeric(tFinal) || ~isscalar(tFinal) || ~isreal(tFinal) || ~isfinite(tFinal) || tFinal <= 0
@@ -60,7 +78,7 @@ function [t, h, qSalida, qBomba, qEntrada] = simularDeposito(deposito, tFinal, q
         end
     end
 
-    usarSenalPropia = nargin < 3 || isempty(qBombaUsuario);
+    usarSenalPropia = nargin < 4 || isempty(qBombaUsuario);
     if ~usarSenalPropia
         qBombaUsuario = qBombaUsuario(:);
         if numel(qBombaUsuario) ~= nPasos && numel(qBombaUsuario) ~= nPasos + 1

@@ -13,26 +13,22 @@ function [t, h, qSalida] = simularDeposito(deposito, Ts)
 
     % El enunciado dice que el nivel no se estabiliza hasta unos 3*tau.
     % Cada cambio de la bomba dura 4*tau, para ver el nivel ya quieto.
+    % Hay tres cambios, asi que la simulacion dura 3 veces eso.
     duracion = 4 * tau;
-    pasosPorTramo = round(duracion / Ts);   % Cuantos pasos caben en 4*tau
-    pasosTotales = 3 * pasosPorTramo;       % Tres cambios: subir, bajar y volver
+    tFinal = 3 * duracion;
 
-    % Listas de ceros. La posicion 1 sera el instante t = 0.
-    t = zeros(1, pasosTotales + 1);
-    h = zeros(1, pasosTotales + 1);
-    qSalida = zeros(1, pasosTotales + 1);
-    qBomba = zeros(1, pasosTotales + 1);
-
+    % En el instante 0 el deposito acaba de crearse
+    k = 1;
+    t(1) = 0;
     h(1) = deposito.obtenerNivel();
     qSalida(1) = deposito.obtenerCaudalSalida();
 
-    % k va tomando los valores 1, 2, 3, ... hasta pasosTotales
-    for k = 1:pasosTotales
-        tiempo = (k - 1) * Ts;    % 0, Ts, 2*Ts, 3*Ts, ...
-
-        if tiempo < duracion
+    % Se repite mientras no se haya llegado al tiempo final.
+    % Cada vuelta suma Ts segundos: 0, 0.1, 0.2, 0.3, ...
+    while t(k) < tFinal
+        if t(k) < duracion
             qBomba(k) = 1.2 * q0;          % Mas caudal: el nivel sube
-        elseif tiempo < 2 * duracion
+        elseif t(k) < 2 * duracion
             qBomba(k) = 0.8 * q0;          % Menos caudal: el nivel baja
         else
             qBomba(k) = q0;                % Otra vez el caudal de equilibrio
@@ -41,10 +37,12 @@ function [t, h, qSalida] = simularDeposito(deposito, Ts)
         % actualizar avanza el deposito Ts segundos y devuelve el nivel nuevo
         h(k + 1) = deposito.actualizar(qBomba(k));
         qSalida(k + 1) = deposito.obtenerCaudalSalida();
-        t(k + 1) = k * Ts;
+        t(k + 1) = t(k) + Ts;
+        k = k + 1;
     end
 
-    qBomba(pasosTotales + 1) = qBomba(pasosTotales);
+    % El ultimo punto de la bomba, para que la grafica llegue hasta el final
+    qBomba(k) = qBomba(k - 1);
 
     % La grafica esta en otro archivo. Se llama desde aqui.
     representarResultados(t, h, qSalida, qBomba, h0);

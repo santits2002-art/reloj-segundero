@@ -1,0 +1,9 @@
+02/11/2026;Bocadillo;4.50;comida
+03/11/2026;Menu del dia;11.00;comida
+04/11/2026;Autobus;1.50;transporte
+05/11/2026;Metro;2.00;transporte
+06/11/2026;Cine;8.00;ocio
+07/11/2026;Libro;15.90;ocio
+08/11/2026;Cafe;1.80;comida
+09/11/2026;Farmacia;6.40;otros
+10/11/2026;Fruta;3.20;comida

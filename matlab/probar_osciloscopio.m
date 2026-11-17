@@ -22,7 +22,7 @@ for i = 100:50:n
     osciloscopio_virtual
     drawnow
     if isempty(figPrueba) || ~ishandle(figPrueba)
-        figPrueba = findobj(0, 'Type', 'figure', 'Tag', 'osc_dspic');
+        figPrueba = findobj(0, 'Type', 'figure', 'Name', 'Osciloscopio virtual - dsPIC');
     end
 end
 
